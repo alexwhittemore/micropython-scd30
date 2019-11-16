@@ -1,4 +1,8 @@
-# Sensirion SCD30 CO² Sensor I2C driver for MicroPython
+# Sensirion SCD30 CO² Sensor I2C driver for ~~MicroPython~~ CircuitPython
+
+## NOTE: This version of the library is currently CircuitPython compatible, not yet both-compatible.
+
+It shouldn't be too hard to make this library platform-agnostic, as the changes to make it CircuitPython-compatible were pretty minimal. I haven't tried using Blinka, which might have been the "right" way to deploy this in my project anyway. I'm not sure how Blinka's supposed to work in situations like this. Maybe it's relevant. 
 
 Sensirion SCD30 is a CO², Humidity and Temperature sensor on a module. This is
 a I2C driver written in Python 3 for MicroPython.
@@ -26,7 +30,7 @@ using the Pyboard D:
 
 This example reads the measurements in a continous loop:
 
-```
+``` python
 import time
 from machine import I2C, Pin
 from scd30 import SCD30
@@ -39,6 +43,29 @@ while True:
     while scd30.get_status_ready() != 1:
         time.sleep_ms(200)
     scd30.read_measurement()
+```
+
+CircuitPython Example:
+
+``` python
+import time
+import board
+from scd30 import SCD30
+
+i2c = board.I2C()
+scd30 = SCD30(i2c, 0x61)
+
+while 1:
+    while scd30.get_status_ready() != 1:
+            time.sleep(0.200)
+    print("getting measurement")
+    try:
+        co2, temp, relh = scd30.read_measurement()
+    except CRCException:
+        pass
+    print(co2)
+    print(temp)
+    print(relh)
 ```
 
 Note that the CO² sensor needs some time to stabilize. Therefor the sensor

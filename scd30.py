@@ -1,5 +1,5 @@
-from machine import I2C
-import utime
+#from machine import I2C
+import time
 import struct
 
 class SCD30:
@@ -54,18 +54,25 @@ class SCD30:
         130, 179, 224, 209, 70, 119, 36, 21, 59, 10, 89, 104, 255, 206, 157, 172
         ]
 
-    def __init__(self, i2c, addr, pause=1000):
+    def __init__(self, i2c, addr, pause=0.001):
         self.i2c = i2c
         self.pause = pause
         self.addr = addr
+        while not i2c.try_lock():
+            pass
         if not addr in i2c.scan():
+            i2c.unlock()
             raise self.NotFoundException
+        i2c.unlock()
 
     def start_continous_measurement(self, ambient_pressure=0):
         bint = struct.pack('>H', ambient_pressure)
         crc = self.__crc(bint[0], bint[1])
         data = bint + bytes([crc])
+        while not self.i2c.try_lock():
+            pass
         self.i2c.writeto_mem(self.addr, self.START_CONT_MEASURE, data, addrsize=16)
+        self.i2c.unlock()
 
     def stop_continous_measurement(self):
         self.__write_command(self.STOP_CONT_MEASURE)
@@ -76,7 +83,7 @@ class SCD30:
     def get_firmware_version(self):
         ver = self.__read_bytes(self.GET_FIRMWARE_VER, 3)
         self.__check_crc(ver)
-        return struct.unpack('BB', ver)
+        return struct.unpack('BB', ver[0:2])
 
     def read_measurement(self):
         measurement = self.__read_bytes(self.READ_MEASUREMENT, 18)
@@ -94,7 +101,7 @@ class SCD30:
     def get_status_ready(self):
         ready = self.__read_bytes(self.GET_STATUS_READY, 3)
         self.__check_crc(ready)
-        return struct.unpack('>H', ready)[0]
+        return struct.unpack('>H', ready[0:2])[0]
 
     def get_measurement_interval(self):
         bint = self.__read_bytes(self.SET_MEASURE_INTERVAL, 3)
@@ -105,7 +112,10 @@ class SCD30:
         bint = struct.pack('>H', interval)
         crc = self.__crc(bint[0], bint[1])
         data = bint + bytes([crc])
+        while not self.i2c.try_lock():
+            pass
         self.i2c.writeto_mem(self.addr, self.SET_MEASURE_INTERVAL, data, addrsize=16)
+        self.i2c.unlock()
 
     def get_automatic_recalibration(self):
         bint = self.__read_bytes(self.SET_ASC, 3)
@@ -116,7 +126,10 @@ class SCD30:
         bint = struct.pack('>H', 1 if enable else 0)
         crc = self.__crc(bint[0], bint[1])
         data = bint + bytes([crc])
+        while not self.i2c.try_lock():
+            pass
         self.i2c.writeto_mem(self.addr, self.SET_FRC, data, addrsize=16)
+        self.i2c.unlock()
 
     def get_forced_recalibration(self):
         bint = self.__read_bytes(self.SET_FRC, 3)
@@ -127,7 +140,10 @@ class SCD30:
         bint = struct.pack('>H', co2ppm)
         crc = self.__crc(bint[0], bint[1])
         data = bint + bytes([crc])
+        while not self.i2c.try_lock():
+            pass
         self.i2c.writeto_mem(self.addr, self.SET_FRC, data, addrsize=16)
+        self.i2c.unlock()
 
     def get_temperature_offset(self):
         bint = self.__read_bytes(self.SET_TEMP_OFFSET, 3)
@@ -138,7 +154,10 @@ class SCD30:
         bint = struct.pack('>H', int(offset * 100))
         crc = self.__crc(bint[0], bint[1])
         data = bint + bytes([crc])
+        while not self.i2c.try_lock():
+            pass
         self.i2c.writeto_mem(self.addr, self.SET_TEMP_OFFSET, data, addrsize=16)
+        self.i2c.unlock()
 
     def get_altitude_comp(self):
         bint = self.__read_bytes(self.SET_ALT_COMP, 3)
@@ -149,16 +168,27 @@ class SCD30:
         bint = struct.pack('>H', altitude)
         crc = self.__crc(bint[0], bint[1])
         data = bint + bytes([crc])
+        while not self.i2c.try_lock():
+            pass
         self.i2c.writeto_mem(self.addr, self.SET_ALT_COMP, data, addrsize=16)
+        self.i2c.unlock()
 
     def __write_command(self, cmd):
         bcmd = struct.pack('>H', cmd)
+        while not self.i2c.try_lock():
+            pass
         self.i2c.writeto(self.addr, bcmd)
+        self.i2c.unlock()
 
     def __read_bytes(self, cmd, count):
         self.__write_command(cmd)
-        utime.sleep_us(self.pause)
-        return self.i2c.readfrom(self.addr, count)
+        time.sleep(self.pause)
+        while not self.i2c.try_lock():
+            pass
+        result = bytearray(count)
+        self.i2c.readfrom_into(self.addr, result)
+        self.i2c.unlock()
+        return result
 
     def __check_crc(self, arr):
         assert (len(arr) == 3)
@@ -173,4 +203,3 @@ class SCD30:
             crc ^= lsb
             crc = self.CRC_TABLE[crc]
         return crc
-
