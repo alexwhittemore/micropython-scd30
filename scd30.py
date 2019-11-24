@@ -71,7 +71,8 @@ class SCD30:
         data = bint + bytes([crc])
         while not self.i2c.try_lock():
             pass
-        self.i2c.writeto_mem(self.addr, self.START_CONT_MEASURE, data, addrsize=16)
+        #self.i2c.writeto_mem(self.addr, self.START_CONT_MEASURE, data, addrsize=16)
+        self.i2c.writeto(self.addr, self.START_CONT_MEASURE.to_bytes(2, 'big')+data)
         self.i2c.unlock()
 
     def stop_continous_measurement(self):
@@ -114,7 +115,8 @@ class SCD30:
         data = bint + bytes([crc])
         while not self.i2c.try_lock():
             pass
-        self.i2c.writeto_mem(self.addr, self.SET_MEASURE_INTERVAL, data, addrsize=16)
+        #self.i2c.writeto_mem(self.addr, self.SET_MEASURE_INTERVAL, data, addrsize=16)
+        self.i2c.writeto(self.addr, self.SET_MEASURE_INTERVAL.to_bytes(2, 'big')+data)
         self.i2c.unlock()
 
     def get_automatic_recalibration(self):
@@ -128,7 +130,8 @@ class SCD30:
         data = bint + bytes([crc])
         while not self.i2c.try_lock():
             pass
-        self.i2c.writeto_mem(self.addr, self.SET_FRC, data, addrsize=16)
+        #self.i2c.writeto_mem(self.addr, self.SET_FRC, data, addrsize=16)
+        self.i2c.writeto(self.addr, self.SET_FRC.to_bytes(2, 'big')+data)
         self.i2c.unlock()
 
     def get_forced_recalibration(self):
@@ -142,7 +145,8 @@ class SCD30:
         data = bint + bytes([crc])
         while not self.i2c.try_lock():
             pass
-        self.i2c.writeto_mem(self.addr, self.SET_FRC, data, addrsize=16)
+        #self.i2c.writeto_mem(self.addr, self.SET_FRC, data, addrsize=16)
+        self.i2c.writeto(self.addr, self.SET_FRC.to_bytes(2, 'big')+data)
         self.i2c.unlock()
 
     def get_temperature_offset(self):
@@ -156,7 +160,8 @@ class SCD30:
         data = bint + bytes([crc])
         while not self.i2c.try_lock():
             pass
-        self.i2c.writeto_mem(self.addr, self.SET_TEMP_OFFSET, data, addrsize=16)
+        #self.i2c.writeto_mem(self.addr, self.SET_TEMP_OFFSET, data, addrsize=16
+        self.i2c.writeto(self.addr, self.SET_TEMP_OFFSET.to_bytes(2, 'big')+data)
         self.i2c.unlock()
 
     def get_altitude_comp(self):
@@ -170,7 +175,8 @@ class SCD30:
         data = bint + bytes([crc])
         while not self.i2c.try_lock():
             pass
-        self.i2c.writeto_mem(self.addr, self.SET_ALT_COMP, data, addrsize=16)
+        #self.i2c.writeto_mem(self.addr, self.SET_ALT_COMP, data, addrsize=16)
+        self.i2c.writeto(self.addr, self.SET_ALT_COMP.to_bytes(2, 'big')+data)
         self.i2c.unlock()
 
     def __write_command(self, cmd):
